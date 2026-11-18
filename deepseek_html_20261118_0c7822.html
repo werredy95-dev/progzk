@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موسوعة المعرفة الشاملة | Universal Knowledge Radar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { arabic: ['Cairo', 'sans-serif'], latin: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50:'#eff6ff',100:'#dbeafe',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',900:'#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { transition: background-color .3s ease, color .3s ease; }
+        [dir="rtl"] body { font-family: 'Cairo', sans-serif; }
+        [dir="ltr"] body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(100,116,139,.35); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.65); }
+        .glass-panel { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        
+        /* UI Polish */
+        .bento-card { transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .25s ease, border-color .25s ease; }
+        .bento-card:hover { transform: translateY(-3px) scale(1.005); box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.1); }
+        
+        @keyframes pulse-ring { 0%{transform:scale(.8);opacity:.85} 100%{transform:scale(1.5);opacity:0} }
+        .animate-ring { animation: pulse-ring 1.5s cubic-bezier(.215,.61,.355,1) infinite; }
+        @keyframes fadeSlideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .animate-reveal { animation: fadeSlideUp .45s cubic-bezier(.16,1,.3,1) forwards; }
+        
+        @keyframes chatBubble { from{opacity:0;transform:translateY(8px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .chat-bubble { animation: chatBubble .25s ease forwards; }
+        .typing-dot { animation: typingBlink 1.2s infinite ease-in-out; }
+        .typing-dot:nth-child(2){animation-delay:.15s}
+        .typing-dot:nth-child(3){animation-delay:.3s}
+        @keyframes typingBlink { 0%,80%,100%{opacity:.25;transform:translateY(0)} 40%{opacity:1;transform:translateY(-3px)} }
+        
+        .chat-scroll { scroll-behavior: smooth; }
+        .chat-markdown a { color:#3b82f6; text-decoration: underline; word-break: break-word; }
+        .chat-markdown strong { font-weight: 800; }
+        .chat-markdown code { background: rgba(100,116,139,.15); padding: .1em .35em; border-radius: .35em; font-family: ui-monospace, monospace; font-size: .9em; }
+        .chat-markdown ul { list-style: disc; padding-inline-start: 1.25em; margin: .35em 0; }
+        
+        /* Custom loading progress */
+        .loading-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        .loading-bar::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; height: 100%;
+            width: 30%;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            animation: loadingSlide 1.5s infinite linear;
+        }
+        @keyframes loadingSlide {
+            0% { left: -30%; }
+            100% { left: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 min-h-screen flex flex-col selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+
+    <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div class="absolute -top-40 -start-40 w-96 h-96 rounded-full bg-brand-500/10 dark:bg-brand-600/15 blur-3xl"></div>
+        <div class="absolute top-1/3 -end-40 w-96 h-96 rounded-full bg-indigo-500/10 dark:bg-purple-600/15 blur-3xl"></div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" aria-live="polite" class="fixed bottom-24 z-[100] flex flex-col gap-2 px-4 pointer-events-none transition-all duration-300" style="inset-inline-end: 1rem;"></div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-[#0b1120]/80 glass-panel">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 cursor-pointer group" onclick="resetToHome()">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-atom text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-base sm:text-xl tracking-tight bg-gradient-to-r from-brand-600 via-indigo-500 to-purple-500 dark:from-brand-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent" data-i18n="appTitle">موسوعة المعرفة الشاملة</h1>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block" data-i18n="appSubtitle">ابحث عن أي إنسان، شخصية، جماد، اختراع، شركة، أو مكان في العالم</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700/80">
+                    <button onclick="setLanguage('ar')" id="lang-ar" aria-pressed="true" class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-brand-600 text-white shadow-sm">عربي</button>
+                    <button onclick="setLanguage('en')" id="lang-en" aria-pressed="false" class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-500">EN</button>
+                    <button onclick="setLanguage('fr')" id="lang-fr" aria-pressed="false" class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-500">FR</button>
+                </div>
+
+                <button onclick="openSettings()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 transition-all active:scale-95" aria-label="Settings" title="Settings">
+                    <i class="fa-solid fa-gear text-sm"></i>
+                </button>
+
+                <button onclick="toggleDrawer()" class="relative p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 transition-all active:scale-95" aria-label="Bookmarks">
+                    <i class="fa-solid fa-bookmark text-sm"></i>
+                    <span id="saved-count-badge" class="hidden absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center shadow">0</span>
+                </button>
+
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 transition-all active:scale-95" aria-label="Toggle Theme">
+                    <i id="theme-icon" class="fa-solid fa-sun text-amber-400 text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9 pb-32">
+        <section class="max-w-3xl mx-auto text-center mb-8">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 text-xs font-bold mb-4 animate-reveal">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span data-i18n="liveApiBadge">محرك بحث حقيقي • Wikipedia + Gemini AI + OpenStreetMap + DNS</span>
+            </div>
+
+            <h2 class="text-2xl sm:text-4xl font-black mb-3 leading-tight tracking-tight" data-i18n="heroHeading">اكتشف الحقيقة والمعلومة الدقيقة عن أي شيء</h2>
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6" data-i18n="heroDesc">ابحث عن شخصية تاريخية أو معاصرة، جماد أو اختراع علمي، شركة أو موقع إلكتروني، أو مدينة ومعلم سياحي بأي لغة.</p>
+
+            <div class="flex flex-wrap items-center justify-center gap-2 mb-4" id="category-pills">
+                <button type="button" onclick="selectCategory('all')" data-cat="all" class="cat-pill active px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white shadow-md shadow-brand-600/20 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="catAll">الكل (تلقائي)</span>
+                </button>
+                <button type="button" onclick="selectCategory('person')" data-cat="person" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-user-tie text-sky-500"></i> <span data-i18n="catPerson">شخصيات / إنسان</span>
+                </button>
+                <button type="button" onclick="selectCategory('object')" data-cat="object" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-cube text-amber-500"></i> <span data-i18n="catObject">جماد / علوم / اختراعات</span>
+                </button>
+                <button type="button" onclick="selectCategory('company')" data-cat="company" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-building text-emerald-500"></i> <span data-i18n="catCompany">شركات ومواقع</span>
+                </button>
+                <button type="button" onclick="selectCategory('place')" data-cat="place" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-earth-americas text-rose-500"></i> <span data-i18n="catPlace">أماكن ومعالم</span>
+                </button>
+            </div>
+
+            <form id="search-form" onsubmit="handleSearch(event)" class="relative">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-2xl bg-white dark:bg-slate-900/95 border-2 border-slate-200 dark:border-slate-800 focus-within:border-brand-500 dark:focus-within:border-brand-500 shadow-xl shadow-slate-200/50 dark:shadow-black/50 transition-all">
+                    <div class="flex items-center flex-1 px-3 py-2 relative">
+                        <i class="fa-solid fa-magnifying-glass text-slate-400 text-lg me-3"></i>
+                        <input type="text" id="search-input" role="combobox" aria-autocomplete="list" aria-controls="autocomplete-dropdown" aria-expanded="false" required autocomplete="off" class="w-full bg-transparent border-none outline-none text-base sm:text-lg text-slate-900 dark:text-white placeholder-slate-400" placeholder="ابحث عن: ابن بطوطة، الثقب الأسود، ألبرت أينشتاين، Google، الذهب، مراكش..." data-i18n-placeholder="searchPlaceholder">
+                        <button type="button" id="clear-btn" onclick="clearInput()" aria-label="Clear input" class="hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <button type="submit" id="search-btn" class="px-7 py-3.5 rounded-xl bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span data-i18n="searchBtn">بحث واستكشاف</span>
+                    </button>
+                </div>
+                <div id="autocomplete-dropdown" role="listbox" class="hidden absolute left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-30 overflow-hidden text-start">
+                    <div id="autocomplete-list" class="divide-y divide-slate-100 dark:divide-slate-800/80"></div>
+                </div>
+            </form>
+
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-bold" data-i18n="tryExamples">جرّب البحث عن:</span>
+                <button type="button" onclick="quickSearch('ابن بطوطة')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-sky-500/10 hover:border-sky-500/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-all active:scale-95">🧭 ابن بطوطة</button>
+                <button type="button" onclick="quickSearch('الثقب الأسود')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-500/10 hover:border-amber-500/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-all active:scale-95">🌌 الثقب الأسود</button>
+                <button type="button" onclick="quickSearch('ألبرت أينشتاين')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-sky-500/10 hover:border-sky-500/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-all active:scale-95">⚛️ أينشتاين</button>
+                <button type="button" onclick="quickSearch('الألماس')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-500/10 hover:border-amber-500/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-all active:scale-95">💎 الألماس</button>
+                <button type="button" onclick="quickSearch('Apple')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-500/10 hover:border-emerald-500/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-all active:scale-95">🍎 Apple</button>
+                <button type="button" onclick="quickSearch('مراكش')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-500/10 hover:border-rose-500/50 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-all active:scale-95">🕌 مراكش</button>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <section id="loading-state" class="hidden max-w-4xl mx-auto py-8">
+            <div class="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-xl relative overflow-hidden">
+                <div class="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full bg-brand-500/30 animate-ring"></div>
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-600 to-purple-600 text-white flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-compass fa-spin text-xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-lg font-extrabold mb-1" data-i18n="loadingTitle">جاري البحث في الموسوعات والمصادر المباشرة...</h3>
+                <!-- Dynamic Loading Step -->
+                <p id="loading-step" aria-live="polite" class="text-sm text-slate-500 dark:text-slate-400 h-6 transition-all duration-300" data-i18n="loadingSub">تحليل نوع الكيان وجلب المعلومات الدقيقة...</p>
+                
+                <div class="loading-bar mt-6 max-w-xs mx-auto"></div>
+            </div>
+        </section>
+
+        <!-- Results Dashboard -->
+        <section id="results-dashboard" class="hidden space-y-6 animate-reveal">
+            <div class="bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-xl shadow-slate-200/40 dark:shadow-black/40 relative overflow-hidden">
+                <!-- Decorative gradient blob inside card -->
+                <div class="absolute -top-20 -right-20 w-40 h-40 bg-brand-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative group">
+                            <img id="res-image" alt="Entity Image" class="w-full h-full object-cover hidden transition-transform duration-500 group-hover:scale-110">
+                            <i id="res-image-fallback" class="fa-solid fa-atom text-3xl text-brand-500"></i>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span id="res-type-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/25">
+                                    <i id="res-type-icon" class="fa-solid fa-tag"></i>
+                                    <span id="res-type-label">--</span>
+                                </span>
+                                <span id="res-subbadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">--</span>
+                            </div>
+                            <h2 id="res-name" class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">--</h2>
+                            <p id="res-tagline" class="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium max-w-2xl">--</p>
+                            <div class="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-500 dark:text-slate-400">
+                                <span id="res-meta-1-wrap" class="flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-brand-500"></i> <span id="res-meta-1">--</span></span>
+                                <a id="res-website-link" href="#" target="_blank" rel="noopener noreferrer" class="hidden flex items-center gap-1.5 text-brand-600 dark:text-brand-400 hover:underline font-bold">
+                                    <i class="fa-solid fa-globe"></i> <span id="res-domain">--</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800 shrink-0">
+                        <button onclick="toggleSpeech()" id="speak-btn" class="px-3.5 py-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all active:scale-95">
+                            <i id="speak-icon" class="fa-solid fa-volume-high"></i>
+                            <span data-i18n="listenBtn">استماع</span>
+                        </button>
+                        <button onclick="toggleBookmarkCurrent()" id="bookmark-btn" class="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500/10 hover:text-amber-500 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all active:scale-95">
+                            <i class="fa-regular fa-bookmark"></i>
+                            <span data-i18n="saveBtn">حفظ</span>
+                        </button>
+                        <button onclick="copyReport()" class="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-brand-500/10 hover:text-brand-500 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all active:scale-95">
+                            <i class="fa-regular fa-copy"></i>
+                            <span data-i18n="copyBtn">نسخ</span>
+                        </button>
+                        <button onclick="downloadJSON()" class="px-3.5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-md shadow-brand-600/20 transition-all active:scale-95">
+                            <i class="fa-solid fa-download"></i>
+                            <span>JSON</span>
+                        </button>
+                        <button onclick="toggleChat()" class="px-3.5 py-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 text-xs sm:text-sm font-bold flex items-center gap-2 transition-all active:scale-95">
+                            <i class="fa-solid fa-comments"></i>
+                            <span data-i18n="askAboutBtn">اسأل عن هذا</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="adaptive-metrics-grid"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                        <div class="flex items-center gap-2.5 mb-4">
+                            <div class="w-9 h-9 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center"><i class="fa-solid fa-book-open"></i></div>
+                            <h3 class="text-lg font-extrabold" data-i18n="overviewTitle">المعلومات الدقيقة والشرح الشامل</h3>
+                        </div>
+                        <p id="res-description" class="text-sm sm:text-base leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">--</p>
+                        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+                            <h4 id="res-tags-heading" class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">--</h4>
+                            <div id="res-tags-container" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3" data-i18n="keyFactsTitle">حقائق ومعلومات بارزة</h4>
+                            <ul id="res-facts" class="space-y-2.5 text-sm text-slate-700 dark:text-slate-300"></ul>
+                        </div>
+                    </div>
+
+                    <div id="wiki-card" class="bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center"><i class="fa-brands fa-wikipedia-w"></i></div>
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-extrabold" data-i18n="wikiTitle">المصدر الموسوعي المباشر (Wikipedia)</h3>
+                                    <p id="wiki-page-title" class="text-xs text-slate-500">Wikipedia REST API</p>
+                                </div>
+                            </div>
+                            <a id="wiki-external-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-brand-600 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 active:scale-95">
+                                <span data-i18n="readMoreWiki">قراءة المقال</span>
+                                <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+                            </a>
+                        </div>
+                        <p id="wiki-extract" class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">--</p>
+                    </div>
+
+                    <div id="screenshot-card" class="hidden bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+                        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center"><i class="fa-solid fa-camera-retro"></i></div>
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-extrabold" data-i18n="screenshotTitle">لقطة شاشة مباشرة للموقع</h3>
+                                    <p class="text-xs text-slate-500" data-i18n="screenshotSubtitle">معاينة حية من thum.io</p>
+                                </div>
+                            </div>
+                            <button onclick="reloadScreenshot()" aria-label="Reload screenshot" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-all active:scale-95" title="Reload">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+                        <div class="relative w-full bg-slate-100 dark:bg-slate-800" style="aspect-ratio: 16 / 10;">
+                            <div id="screenshot-loading" class="absolute inset-0 flex items-center justify-center text-slate-400">
+                                <i class="fa-solid fa-circle-notch fa-spin text-2xl"></i>
+                            </div>
+                            <img id="screenshot-img" alt="Website screenshot" class="w-full h-full object-cover object-top cursor-zoom-in relative z-10 opacity-0 transition-opacity duration-500" onclick="openScreenshotFull()">
+                            <div id="screenshot-error" class="hidden absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-bold"></div>
+                        </div>
+                    </div>
+
+                    <div id="dns-card" class="hidden bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center"><i class="fa-solid fa-network-wired"></i></div>
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-extrabold" data-i18n="dnsTitle">فاحص النطاق والسجلات التقنية (Live DNS)</h3>
+                                    <p class="text-xs text-slate-500">Google Public DNS API</p>
+                                </div>
+                            </div>
+                            <span id="dns-domain-badge" class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-xs font-bold text-brand-500">--</span>
+                        </div>
+                        <div id="dns-records-container" class="space-y-2.5"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div id="map-card" class="hidden bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+                        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center"><i class="fa-solid fa-location-dot"></i></div>
+                                <h3 id="map-card-title" class="text-base font-extrabold" data-i18n="locationTitle">الموقع الجغرافي المرتبط</h3>
+                            </div>
+                            <a id="gmaps-link" href="#" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-brand-500 hover:underline flex items-center gap-1 active:scale-95">
+                                <span data-i18n="openMap">خرائط جوجل</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            </a>
+                        </div>
+                        <div class="relative w-full h-56 bg-slate-200 dark:bg-slate-800">
+                            <iframe id="osm-iframe" class="w-full h-full border-0" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="about:blank"></iframe>
+                        </div>
+                        <div class="p-4 text-xs space-y-1.5 bg-slate-50/50 dark:bg-slate-900">
+                            <p id="res-location-desc" class="font-bold text-slate-800 dark:text-slate-200">--</p>
+                            <p id="res-coords" class="font-mono text-slate-500">--</p>
+                        </div>
+                    </div>
+
+                    <div id="related-card" class="hidden bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+                        <h3 class="text-base font-extrabold mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-diagram-project text-indigo-500"></i>
+                            <span data-i18n="relatedTopicsTitle">مواضيع ونتائج ذات صلة</span>
+                        </h3>
+                        <div id="related-topics-list" class="space-y-2"></div>
+                    </div>
+
+                    <div class="bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+                        <h3 class="text-base font-extrabold mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-compass text-brand-500"></i>
+                            <span data-i18n="quickLinksTitle">مصادر إضافية للاستزادة</span>
+                        </h3>
+                        <div id="external-links-container" class="grid grid-cols-1 gap-2 text-xs font-bold"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Empty State -->
+        <section id="empty-state" class="max-w-5xl mx-auto mt-4 animate-reveal" style="animation-delay: 0.2s;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div onclick="quickSearch('ابن سينا')" class="bento-card cursor-pointer bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-sky-500 hover:shadow-sky-500/10 group">
+                    <div class="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform duration-300"><i class="fa-solid fa-user-tie text-xl"></i></div>
+                    <h3 class="font-extrabold text-base mb-1 group-hover:text-sky-500 transition-colors" data-i18n="cardPersonTitle">شخصيات وأعلام</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed" data-i18n="cardPersonDesc">علماء، قادة، مخترعون، فنانون، وأي شخصية تاريخية أو معاصرة مع سيرتهم وإنجازاتهم.</p>
+                </div>
+                <div onclick="quickSearch('الذكاء الاصطناعي')" class="bento-card cursor-pointer bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-amber-500 hover:shadow-amber-500/10 group">
+                    <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform duration-300"><i class="fa-solid fa-microchip text-xl"></i></div>
+                    <h3 class="font-extrabold text-base mb-1 group-hover:text-amber-500 transition-colors" data-i18n="cardObjectTitle">جماد وعلوم ومفاهيم</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed" data-i18n="cardObjectDesc">معادن، ظواهر كونية، أجهزة، اختراعات، أو أي مفهوم علمي وثقافي بتفصيل دقيق.</p>
+                </div>
+                <div onclick="quickSearch('أرامكو السعودية')" class="bento-card cursor-pointer bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-emerald-500 hover:shadow-emerald-500/10 group">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform duration-300"><i class="fa-solid fa-building text-xl"></i></div>
+                    <h3 class="font-extrabold text-base mb-1 group-hover:text-emerald-500 transition-colors" data-i18n="cardCompanyTitle">شركات ومواقع</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed" data-i18n="cardCompanyDesc">بيانات الشركات العالمية والمحلية، مقراتها، مؤسسيها، وفحص سجلات DNS للمواقع.</p>
+                </div>
+                <div onclick="quickSearch('الأهرامات')" class="bento-card cursor-pointer bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-rose-500 hover:shadow-rose-500/10 group">
+                    <div class="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform duration-300"><i class="fa-solid fa-landmark text-xl"></i></div>
+                    <h3 class="font-extrabold text-base mb-1 group-hover:text-rose-500 transition-colors" data-i18n="cardPlaceTitle">مدن ومعالم</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed" data-i18n="cardPlaceDesc">استكشف الدول والمدن والمعالم التاريخية والطبيعية مع خرائط تفاعلية وإحداثيات.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bookmarks Drawer -->
+    <div id="drawer-backdrop" onclick="toggleDrawer()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden transition-opacity"></div>
+    <aside id="bookmarks-drawer" role="dialog" aria-modal="true" tabindex="-1" class="fixed top-0 bottom-0 z-50 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-s border-slate-200 dark:border-slate-800 shadow-2xl transform -translate-x-full transition-transform duration-300 flex flex-col" style="inset-inline-end: 0;">
+        <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="font-extrabold text-lg flex items-center gap-2">
+                <i class="fa-solid fa-bookmark text-brand-500"></i>
+                <span data-i18n="drawerTitle">المحفوظات وسجل البحث</span>
+            </h3>
+            <button onclick="toggleDrawer()" aria-label="Close drawer" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3" data-i18n="savedItemsTitle">العناصر المحفوظة</h4>
+                <div id="bookmarks-list" class="space-y-2"></div>
+            </div>
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400" data-i18n="recentHistoryTitle">عمليات البحث الأخيرة</h4>
+                    <button onclick="clearHistory()" class="text-xs text-rose-500 hover:underline" data-i18n="clearHistory">مسح السجل</button>
+                </div>
+                <div id="history-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Chat FAB -->
+    <button id="chat-fab" onclick="toggleChat()" aria-expanded="false" class="fixed bottom-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 text-white shadow-2xl shadow-brand-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-all group" style="inset-inline-end: 1.25rem;" aria-label="Chat">
+        <i class="fa-solid fa-comments text-xl group-hover:rotate-12 transition-transform"></i>
+        <span id="chat-unread" aria-label="New message" class="hidden absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow animate-bounce">1</span>
+    </button>
+
+    <!-- Chat Panel -->
+    <aside id="chat-panel" role="dialog" aria-modal="true" tabindex="-1" class="fixed z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transition-all duration-300 opacity-0 translate-y-6 pointer-events-none" style="bottom: 0; inset-inline-end: 0; width: 420px; max-width: 100vw; height: 620px; max-height: 88vh; border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem;">
+        <div class="p-4 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between shrink-0 bg-white/50 dark:bg-slate-900/50 rounded-t-[1.5rem]">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-purple-600 text-white flex items-center justify-center shadow-md"><i class="fa-solid fa-robot"></i></div>
+                <div>
+                    <h3 class="font-extrabold text-sm" data-i18n="chatTitle">المساعد الذكي</h3>
+                    <p id="chat-context-label" class="text-[11px] text-slate-500 truncate max-w-[180px]" data-i18n="chatSubtitle">اسأل عن أي شيء</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1">
+                <button onclick="clearChat()" aria-label="Clear chat" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors" title="Clear Chat"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                <button onclick="openSettings()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors" title="Settings"><i class="fa-solid fa-gear text-sm"></i></button>
+                <button onclick="toggleChat()" aria-label="Close chat" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        
+        <div id="chat-messages" aria-live="polite" class="flex-1 overflow-y-auto p-4 space-y-4 chat-scroll"></div>
+        
+        <div id="chat-loading" class="hidden px-4 py-2 text-xs text-slate-500 flex items-center gap-2 shrink-0">
+            <div class="flex gap-1"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 typing-dot"></span><span class="w-1.5 h-1.5 rounded-full bg-brand-500 typing-dot"></span><span class="w-1.5 h-1.5 rounded-full bg-brand-500 typing-dot"></span></div>
+            <span data-i18n="chatThinking">يفكر...</span>
+        </div>
+        
+        <form onsubmit="handleChatSubmit(event)" class="p-3 border-t border-slate-200/80 dark:border-slate-800/80 shrink-0 bg-white/50 dark:bg-slate-900/50 rounded-b-[1.5rem]">
+            <div class="flex items-center gap-2">
+                <input type="text" id="chat-input" class="flex-1 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-brand-500/50 focus:bg-white dark:focus:bg-slate-900 outline-none text-sm text-slate-900 dark:text-white transition-all" placeholder="اكتب سؤالك..." data-i18n-placeholder="chatPlaceholder" autocomplete="off">
+                <button type="submit" id="chat-send-btn" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold transition-all active:scale-95 shadow-md shadow-brand-600/20">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </aside>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeSettings()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 animate-reveal">
+            <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="font-extrabold flex items-center gap-2"><i class="fa-solid fa-gear text-brand-500"></i><span data-i18n="settingsTitle">الإعدادات</span></h3>
+                <button onclick="closeSettings()" aria-label="Close settings" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <label class="text-sm font-bold block" data-i18n="apiKeyLabel">مفتاح Gemini API</label>
+                <input type="password" id="api-key-input" class="w-full px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none text-sm font-mono text-slate-900 dark:text-white focus:border-brand-500 transition-all" placeholder="AIza...">
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    <span data-i18n="apiKeyHelp">احصل على مفتاحك من</span>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-brand-500 hover:underline font-bold">Google AI Studio</a>.
+                    <span data-i18n="apiKeyHelp2">المفتاح يُحفظ محليًا في متصفحك فقط.</span>
+                </p>
+                <div id="api-key-status" class="hidden text-xs font-bold p-2 rounded-lg"></div>
+            </div>
+            <div class="p-5 pt-0 flex gap-2">
+                <button onclick="saveSettings()" class="flex-1 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm transition-all active:scale-95 shadow-md shadow-brand-600/20" data-i18n="saveSettings">حفظ</button>
+                <button onclick="closeSettings()" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-sm transition-all active:scale-95" data-i18n="cancelBtn">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Screenshot Modal -->
+    <div id="screenshot-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeScreenshotFull()"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col animate-reveal">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-camera-retro text-cyan-500"></i>
+                    <span id="screenshot-modal-domain" class="font-extrabold text-sm"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a id="screenshot-modal-open" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"><i class="fa-solid fa-globe"></i><span data-i18n="openSiteBtn">فتح الموقع</span></a>
+                    <button onclick="closeScreenshotFull()" aria-label="Close screenshot" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto bg-slate-100 dark:bg-slate-950">
+                <img id="screenshot-modal-img" alt="Screenshot" class="w-full h-auto">
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-slate-200/70 dark:border-slate-800/70 py-5 text-center text-xs text-slate-500 dark:text-slate-400">
+        <p data-i18n="footerText">موسوعة المعرفة الشاملة • مدعومة بـ Wikipedia API و Gemini AI و OpenStreetMap</p>
+    </footer>
+
+<script>
+    // ==================== 1. SAFE STORAGE HELPER ====================
+    function safeGetItem(key, fallback) {
+        try { return localStorage.getItem(key) || fallback; } catch (e) { return fallback; }
+    }
+    function safeSetItem(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) {}
+    }
+    function safeParse(str, fallback) {
+        try { return JSON.parse(str); } catch (e) { return fallback; }
+    }
+
+    // ==================== 2. TRANSLATIONS ====================
+    const translations = {
+        ar: {
+            appTitle: "موسوعة المعرفة الشاملة",
+            appSubtitle: "ابحث عن أي إنسان، شخصية، جماد، اختراع، شركة، أو مكان في العالم",
+            liveApiBadge: "محرك بحث حقيقي • Wikipedia + Gemini AI + OpenStreetMap + DNS",
+            heroHeading: "اكتشف الحقيقة والمعلومة الدقيقة عن أي شيء",
+            heroDesc: "ابحث عن شخصية تاريخية أو معاصرة، جماد أو اختراع علمي، شركة أو موقع إلكتروني، أو مدينة ومعلم سياحي بأي لغة.",
+            catAll: "الكل (تلقائي)", catPerson: "شخصيات / إنسان", catObject: "جماد / علوم / اختراعات",
+            catCompany: "شركات ومواقع", catPlace: "أماكن ومعالم",
+            searchPlaceholder: "ابحث عن: ابن بطوطة، الثقب الأسود، ألبرت أينشتاين، Google، الذهب، مراكش...",
+            searchBtn: "بحث واستكشاف", tryExamples: "جرّب البحث عن:",
+            loadingTitle: "جاري البحث في الموسوعات والمصادر المباشرة...",
+            loadingSub: "تحليل نوع الكيان وجلب المعلومات الدقيقة...",
+            loadingStep1: "1. جاري البحث في ويكيبيديا...",
+            loadingStep2: "2. تحليل البيانات بالذكاء الاصطناعي...",
+            loadingStep3: "3. جلب السجلات والخرائط...",
+            listenBtn: "استماع", stopBtn: "إيقاف", saveBtn: "حفظ", savedBtn: "محفوظ", copyBtn: "نسخ",
+            overviewTitle: "المعلومات الدقيقة والشرح الشامل", keyFactsTitle: "حقائق ومعلومات بارزة",
+            wikiTitle: "المصدر الموسوعي المباشر (Wikipedia)", readMoreWiki: "قراءة المقال",
+            dnsTitle: "فاحص النطاق والسجلات التقنية (Live DNS)", locationTitle: "الموقع الجغرافي المرتبط", openMap: "خرائط جوجل",
+            relatedTopicsTitle: "مواضيع ونتائج ذات صلة", quickLinksTitle: "مصادر إضافية للاستزادة",
+            cardPersonTitle: "شخصيات وأعلام", cardPersonDesc: "علماء، قادة، مخترعون، فنانون، وأي شخصية تاريخية أو معاصرة مع سيرتهم وإنجازاتهم.",
+            cardObjectTitle: "جماد وعلوم ومفاهيم", cardObjectDesc: "معادن، ظواهر كونية، أجهزة، اختراعات، أو أي مفهوم علمي وثقافي بتفصيل دقيق.",
+            cardCompanyTitle: "شركات ومواقع", cardCompanyDesc: "بيانات الشركات العالمية والمحلية، مقراتها، مؤسسيها، وفحص سجلات DNS للمواقع.",
+            cardPlaceTitle: "مدن ومعالم", cardPlaceDesc: "استكشف الدول والمدن والمعالم التاريخية والطبيعية مع خرائط تفاعلية وإحداثيات.",
+            drawerTitle: "المحفوظات وسجل البحث", savedItemsTitle: "العناصر المحفوظة",
+            recentHistoryTitle: "عمليات البحث الأخيرة", clearHistory: "مسح السجل",
+            noSaved: "لا توجد عناصر محفوظة بعد.", noHistory: "سجل البحث فارغ.",
+            footerText: "موسوعة المعرفة الشاملة • مدعومة بـ Wikipedia API و Gemini AI و OpenStreetMap",
+            toastCopied: "تم نسخ التقرير إلى الحافظة!", toastSaved: "تم الحفظ في المفضلة!",
+            toastRemoved: "تمت الإزالة من المفضلة.",
+            toastNotFound: "لم نتمكن من العثور على معلومات كافية، حاول كتابة الاسم بشكل أوضح.",
+            toastTimeout: "استغرق البحث وقتاً طويلاً. يرجى المحاولة مرة أخرى.",
+            toastSettingsSaved: "تم حفظ الإعدادات بنجاح!",
+            toastTtsUnsupported: "متصفحك لا يدعم القراءة الصوتية.",
+            toastTtsNoText: "لا يوجد نص للقراءة حالياً.",
+            toastScreenshotFailed: "تعذر تحميل لقطة الشاشة.",
+            toastChatCleared: "تم مسح الدردشة.",
+            typeLabels: { person:"شخصية / إنسان", object:"جماد / مفهوم / علم", company:"شركة / موقع إلكتروني", place:"مكان / معلم جغرافي" },
+            tagsHeadings: { person:"أبرز الأعمال والإنجازات والمجالات", object:"الخصائص والاستخدامات والمكونات", company:"أبرز المنتجات والخدمات", place:"أبرز المعالم والخصائص" },
+            searchGoogleLink: "البحث في محرك Google", searchWikiLink: "استكشاف في موسوعة ويكيبيديا",
+            visitOfficialLink: "زيارة الموقع الرسمي", openSiteBtn: "فتح الموقع",
+            screenshotTitle: "لقطة شاشة مباشرة للموقع", screenshotSubtitle: "معاينة حية من thum.io",
+            settingsTitle: "الإعدادات", apiKeyLabel: "مفتاح Gemini API",
+            apiKeyHelp: "احصل على مفتاحك من", apiKeyHelp2: "المفتاح يُحفظ محليًا في متصفحك فقط.",
+            saveSettings: "حفظ", cancelBtn: "إلغاء",
+            askAboutBtn: "اسأل عن هذا",
+            chatTitle: "المساعد الذكي", chatSubtitle: "اسأل عن أي شيء",
+            chatPlaceholder: "اكتب سؤالك...", chatThinking: "يفكر...",
+            chatWelcome: "مرحباً! أنا مساعدك الذكي. يمكنك سؤالي عن أي شيء — أو البحث أولاً ثم سؤالي عن النتيجة الحالية.",
+            chatNoKey: "لتفعيل الدردشة الذكية الكاملة، أضف مفتاح Gemini API من الإعدادات. حالياً سأجيب من المعلومات المتاحة محلياً.",
+            chatNoResult: "لا يوجد موضوع حالي. ابحث عن شيء أولاً أو اسألني سؤالاً عاماً (يتطلب مفتاح API).",
+            chatError: "حدث خطأ أثناء جلب الإجابة. حاول مرة أخرى.",
+            chatAboutCurrent: "أنت تسأل عن: {name}"
+        },
+        en: {
+            appTitle: "Universal Knowledge Radar",
+            appSubtitle: "Search any Person, Object, Invention, Company, Website, or Place",
+            liveApiBadge: "Live Engine • Wikipedia + Gemini AI + OpenStreetMap + DNS",
+            heroHeading: "Discover Accurate Facts About Anything Worldwide",
+            heroDesc: "Look up historical or modern figures, inanimate objects, scientific concepts, companies, websites, or cities in any language.",
+            catAll: "All (Auto)", catPerson: "People / Figures", catObject: "Objects / Science",
+            catCompany: "Companies / Web", catPlace: "Places / Landmarks",
+            searchPlaceholder: "Try: Ibn Battuta, Black Hole, Albert Einstein, Google, Diamond, Marrakech...",
+            searchBtn: "Explore", tryExamples: "Try searching:",
+            loadingTitle: "Searching encyclopedias & live sources...",
+            loadingSub: "Classifying entity & gathering verified facts...",
+            loadingStep1: "1. Searching Wikipedia...",
+            loadingStep2: "2. Analyzing with AI...",
+            loadingStep3: "3. Fetching DNS & Maps...",
+            listenBtn: "Listen", stopBtn: "Stop", saveBtn: "Save", savedBtn: "Saved", copyBtn: "Copy",
+            overviewTitle: "Accurate Overview & Detailed Explanation", keyFactsTitle: "Key Facts & Highlights",
+            wikiTitle: "Live Encyclopedia Source (Wikipedia)", readMoreWiki: "Full Article",
+            dnsTitle: "Live Domain & DNS Inspector", locationTitle: "Associated Geographic Location", openMap: "Google Maps",
+            relatedTopicsTitle: "Related Topics & Matches", quickLinksTitle: "Additional Sources",
+            cardPersonTitle: "People & Figures", cardPersonDesc: "Scientists, leaders, inventors, artists, and historical or modern figures.",
+            cardObjectTitle: "Objects & Science", cardObjectDesc: "Minerals, cosmic phenomena, devices, inventions, and scientific concepts.",
+            cardCompanyTitle: "Companies & Websites", cardCompanyDesc: "Global and local organizations, headquarters, founders, and live DNS records.",
+            cardPlaceTitle: "Cities & Landmarks", cardPlaceDesc: "Explore countries, cities, and landmarks with interactive maps & coordinates.",
+            drawerTitle: "Saved & Search History", savedItemsTitle: "Bookmarked Items",
+            recentHistoryTitle: "Recent Searches", clearHistory: "Clear",
+            noSaved: "No saved items yet.", noHistory: "History is empty.",
+            footerText: "Universal Knowledge Radar • Powered by Wikipedia API, Gemini AI & OpenStreetMap",
+            toastCopied: "Report copied to clipboard!", toastSaved: "Saved to bookmarks!",
+            toastRemoved: "Removed from bookmarks.",
+            toastNotFound: "Could not find enough info. Please try a clearer search term.",
+            toastTimeout: "Search took too long. Please try again.",
+            toastSettingsSaved: "Settings saved successfully!",
+            toastTtsUnsupported: "Your browser doesn't support speech.",
+            toastTtsNoText: "No text to read yet.",
+            toastScreenshotFailed: "Failed to load screenshot.",
+            toastChatCleared: "Chat cleared.",
+            typeLabels: { person:"Person / Figure", object:"Object / Concept / Science", company:"Company / Website", place:"Place / Landmark" },
+            tagsHeadings: { person:"Famous Works, Achievements & Fields", object:"Properties, Uses & Components", company:"Key Products & Services", place:"Notable Landmarks & Features" },
+            searchGoogleLink: "Search on Google", searchWikiLink: "Explore on Wikipedia",
+            visitOfficialLink: "Visit Official Website", openSiteBtn: "Open site",
+            screenshotTitle: "Live Website Screenshot", screenshotSubtitle: "Live preview via thum.io",
+            settingsTitle: "Settings", apiKeyLabel: "Gemini API Key",
+            apiKeyHelp: "Get your key from", apiKeyHelp2: "Stored locally in your browser only.",
+            saveSettings: "Save", cancelBtn: "Cancel",
+            askAboutBtn: "Ask about this",
+            chatTitle: "Smart Assistant", chatSubtitle: "Ask anything",
+            chatPlaceholder: "Type your question...", chatThinking: "Thinking...",
+            chatWelcome: "Hi! I'm your smart assistant. Ask me anything — or search first, then ask about the result.",
+            chatNoKey: "To enable full smart chat, add your Gemini API key in settings. For now I'll answer from available local data.",
+            chatNoResult: "No current topic. Search something first or ask a general question (requires API key).",
+            chatError: "Error fetching answer. Please try again.",
+            chatAboutCurrent: "You're asking about: {name}"
+        },
+        fr: {
+            appTitle: "Radar Universel du Savoir",
+            appSubtitle: "Recherchez toute personne, objet, invention, entreprise ou lieu",
+            liveApiBadge: "Moteur en direct • Wikipedia + Gemini AI + OpenStreetMap + DNS",
+            heroHeading: "Découvrez des faits précis sur tout sujet",
+            heroDesc: "Recherchez une personnalité, un objet, un concept scientifique, une entreprise, un site web ou une ville dans n'importe quelle langue.",
+            catAll: "Tout (Auto)", catPerson: "Personnalités", catObject: "Objets / Sciences",
+            catCompany: "Entreprises / Web", catPlace: "Lieux / Monuments",
+            searchPlaceholder: "Ex: Ibn Battuta, Trou noir, Albert Einstein, Google, Diamant, Marrakech...",
+            searchBtn: "Explorer", tryExamples: "Exemples :",
+            loadingTitle: "Recherche dans les encyclopédies et sources en direct...",
+            loadingSub: "Analyse et collecte des données précises...",
+            loadingStep1: "1. Recherche sur Wikipédia...",
+            loadingStep2: "2. Analyse avec l'IA...",
+            loadingStep3: "3. Récupération DNS et cartes...",
+            listenBtn: "Écouter", stopBtn: "Arrêter", saveBtn: "Sauvegarder", savedBtn: "Sauvegardé", copyBtn: "Copier",
+            overviewTitle: "Aperçu précis et explication détaillée", keyFactsTitle: "Faits et points clés",
+            wikiTitle: "Source Encyclopédique (Wikipedia)", readMoreWiki: "Lire l'article",
+            dnsTitle: "Inspecteur de domaine et DNS", locationTitle: "Localisation géographique", openMap: "Google Maps",
+            relatedTopicsTitle: "Sujets connexes", quickLinksTitle: "Sources supplémentaires",
+            cardPersonTitle: "Personnalités", cardPersonDesc: "Scientifiques, leaders, inventeurs, artistes et figures historiques.",
+            cardObjectTitle: "Objets et Sciences", cardObjectDesc: "Minéraux, phénomènes cosmiques, appareils, inventions et concepts.",
+            cardCompanyTitle: "Entreprises et Sites", cardCompanyDesc: "Entreprises, sièges sociaux, fondateurs et enregistrements DNS.",
+            cardPlaceTitle: "Villes et Monuments", cardPlaceDesc: "Explorez pays, villes et monuments avec cartes interactives.",
+            drawerTitle: "Favoris et historique", savedItemsTitle: "Éléments sauvegardés",
+            recentHistoryTitle: "Recherches récentes", clearHistory: "Effacer",
+            noSaved: "Aucun élément sauvegardé.", noHistory: "Historique vide.",
+            footerText: "Radar Universel du Savoir • Propulsé par Wikipedia API, Gemini AI & OpenStreetMap",
+            toastCopied: "Rapport copié !", toastSaved: "Ajouté aux favoris !",
+            toastRemoved: "Retiré des favoris.",
+            toastNotFound: "Informations insuffisantes, essayez un terme plus précis.",
+            toastTimeout: "La recherche a pris trop de temps. Veuillez réessayer.",
+            toastSettingsSaved: "Paramètres enregistrés !",
+            toastTtsUnsupported: "Votre navigateur ne supporte pas la synthèse vocale.",
+            toastTtsNoText: "Aucun texte à lire.",
+            toastScreenshotFailed: "Échec du chargement de la capture.",
+            toastChatCleared: "Chat effacé.",
+            typeLabels: { person:"Personnalité / Humain", object:"Objet / Concept / Science", company:"Entreprise / Site Web", place:"Lieu / Monument" },
+            tagsHeadings: { person:"Œuvres célèbres et réalisations", object:"Propriétés, utilisations et composants", company:"Produits et services clés", place:"Points d'intérêt et caractéristiques" },
+            searchGoogleLink: "Rechercher sur Google", searchWikiLink: "Explorer sur Wikipédia",
+            visitOfficialLink: "Visiter le site officiel", openSiteBtn: "Ouvrir le site",
+            screenshotTitle: "Capture d'écran du site", screenshotSubtitle: "Aperçu en direct via thum.io",
+            settingsTitle: "Paramètres", apiKeyLabel: "Clé API Gemini",
+            apiKeyHelp: "Obtenez votre clé sur", apiKeyHelp2: "Stockée localement dans votre navigateur uniquement.",
+            saveSettings: "Enregistrer", cancelBtn: "Annuler",
+            askAboutBtn: "Poser une question",
+            chatTitle: "Assistant Intelligent", chatSubtitle: "Posez vos questions",
+            chatPlaceholder: "Tapez votre question...", chatThinking: "Réflexion...",
+            chatWelcome: "Bonjour ! Je suis votre assistant intelligent. Posez-moi n'importe quelle question — ou recherchez d'abord puis interrogez-moi sur le résultat.",
+            chatNoKey: "Pour activer le chat intelligent complet, ajoutez votre clé API Gemini dans les paramètres. Pour l'instant, je répondrai à partir des données locales.",
+            chatNoResult: "Aucun sujet actuel. Recherchez d'abord ou posez une question générale (nécessite une clé API).",
+            chatError: "Erreur lors de la récupération de la réponse. Réessayez.",
+            chatAboutCurrent: "Vous posez une question sur : {name}"
+        }
+    };
+
+    // ==================== 3. STATE ====================
+    let currentLang = safeGetItem('universal_lang', 'ar');
+    let selectedCategory = safeGetItem('universal_category', 'all');
+    let currentResult = null;
+    let savedBookmarks = safeParse(safeGetItem('universal_bookmarks', '[]'), []);
+    let searchHistory = safeParse(safeGetItem('universal_history', '[]'), []);
+    let chatMessages = safeParse(safeGetItem('universal_chat', '[]'), []);
+    let geminiApiKey = safeGetItem('gemini_api_key', '');
+    
+    let autocompleteTimer = null;
+    let isSpeaking = false;
+    let ttsTimeout = null;
+    let chatOpen = false;
+    let searchAbortController = null;
+    let requestTimeoutId = null;
+    const searchCache = new Map();
+
+    const GEMINI_MODEL = 'gemini-3.1-flash-lite';
+
+    // ==================== 4. INIT ====================
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = safeGetItem('theme', 'dark');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').className = 'fa-solid fa-sun text-amber-400 text-sm';
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-icon').className = 'fa-solid fa-moon text-slate-700 text-sm';
+        }
+
+        const input = document.getElementById('search-input');
+        const clearBtn = document.getElementById('clear-btn');
+
+        input.addEventListener('input', () => {
+            const val = input.value.trim();
+            clearBtn.classList.toggle('hidden', val.length === 0);
+            clearTimeout(autocompleteTimer);
+            if (val.length >= 2) {
+                autocompleteTimer = setTimeout(() => fetchAutocompleteSuggestions(val), 280);
+            } else {
+                hideAutocomplete();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const form = document.getElementById('search-form');
+            if (form && !form.contains(e.target)) hideAutocomplete();
+        });
+
+        document.getElementById('autocomplete-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-title]');
+            if (btn) { quickSearch(btn.getAttribute('data-title')); }
+        });
+        document.getElementById('related-topics-list').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-title]');
+            if (btn) { quickSearch(btn.getAttribute('data-title')); }
+        });
+        document.getElementById('bookmarks-list').addEventListener('click', (e) => {
+            const item = e.target.closest('[data-query]');
+            if (item) { quickSearch(item.getAttribute('data-query')); toggleDrawer(); }
+        });
+        document.getElementById('history-list').addEventListener('click', (e) => {
+            const item = e.target.closest('[data-query]');
+            if (item) { quickSearch(item.getAttribute('data-query')); toggleDrawer(); }
+        });
+
+        setLanguage(currentLang);
+        renderDrawerLists();
+        renderChatMessages();
+
+        if (!geminiApiKey) {
+            document.getElementById('chat-unread').classList.remove('hidden');
+        }
+
+        // Focus trap & Escape handling
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeSettings();
+                closeScreenshotFull();
+                hideAutocomplete();
+                if (chatOpen) toggleChat();
+                const drawer = document.getElementById('bookmarks-drawer');
+                if (!drawer.classList.contains('-translate-x-full') && !drawer.classList.contains('translate-x-full')) {
+                    toggleDrawer();
+                }
+            }
+        });
+
+        const trapFocus = (e) => {
+            if (e.key !== 'Tab') return;
+            const focusable = e.currentTarget.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        };
+
+        document.getElementById('settings-modal').addEventListener('keydown', trapFocus);
+        document.getElementById('screenshot-modal').addEventListener('keydown', trapFocus);
+        document.getElementById('chat-panel').addEventListener('keydown', trapFocus);
+        document.getElementById('bookmarks-drawer').addEventListener('keydown', trapFocus);
+    });
+
+    function resetToHome() {
+        stopSpeech();
+        clearInput();
+        document.getElementById('results-dashboard').classList.add('hidden');
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('empty-state').classList.remove('hidden');
+        currentResult = null;
+        updateChatContextLabel();
+    }
+
+    function toggleTheme() {
+        const isDark = document.documentElement.classList.toggle('dark');
+        safeSetItem('theme', isDark ? 'dark' : 'light');
+        document.getElementById('theme-icon').className = isDark
+            ? 'fa-solid fa-sun text-amber-400 text-sm'
+            : 'fa-solid fa-moon text-slate-700 text-sm';
+    }
+
+    function selectCategory(cat) {
+        selectedCategory = cat;
+        safeSetItem('universal_category', cat);
+        document.querySelectorAll('.cat-pill').forEach(btn => {
+            if (btn.getAttribute('data-cat') === cat) {
+                btn.className = 'cat-pill active px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white shadow-md shadow-brand-600/20 transition-all flex items-center gap-1.5 active:scale-95';
+            } else {
+                btn.className = 'cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-1.5 active:scale-95';
+            }
+        });
+    }
+
+    function setLanguage(lang) {
+        stopSpeech();
+        currentLang = lang;
+        safeSetItem('universal_lang', lang);
+        const html = document.documentElement;
+        html.lang = lang;
+        html.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+        ['ar','en','fr'].forEach(l => {
+            const btn = document.getElementById(`lang-${l}`);
+            const isActive = l === lang;
+            btn.setAttribute('aria-pressed', isActive);
+            if (isActive) btn.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all bg-brand-600 text-white shadow-sm';
+            else btn.className = 'px-2.5 py-1 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-300 hover:text-brand-500';
+        });
+
+        const dict = translations[lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) el.textContent = dict[key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (dict[key]) el.placeholder = dict[key];
+        });
+
+        const drawer = document.getElementById('bookmarks-drawer');
+        const wasOpen = !drawer.classList.contains('-translate-x-full') && !drawer.classList.contains('translate-x-full');
+        drawer.classList.remove('-translate-x-full', 'translate-x-full');
+        if (!wasOpen) drawer.classList.add(lang === 'ar' ? '-translate-x-full' : 'translate-x-full');
+
+        updateChatContextLabel();
+        renderChatMessages();
+
+        if (currentResult && currentResult.originalQuery) {
+            executeUniversalSearch(currentResult.originalQuery, true);
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        const bgClass = type === 'error'
+            ? 'bg-rose-600 text-white'
+            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border border-slate-700 dark:border-slate-200';
+        toast.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transform transition-all duration-300 translate-y-4 opacity-0 ${bgClass}`;
+        toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check text-emerald-500'}"></i><span></span>`;
+        toast.querySelector('span').textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
+        setTimeout(() => {
+            toast.classList.add('translate-y-4', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function clearInput() {
+        const input = document.getElementById('search-input');
+        input.value = '';
+        document.getElementById('clear-btn').classList.add('hidden');
+        hideAutocomplete();
+    }
+
+    function quickSearch(term) {
+        const input = document.getElementById('search-input');
+        input.value = term;
+        document.getElementById('clear-btn').classList.remove('hidden');
+        hideAutocomplete();
+        executeUniversalSearch(term);
+    }
+
+    function handleSearch(e) {
+        e.preventDefault();
+        hideAutocomplete();
+        const query = document.getElementById('search-input').value.trim();
+        if (!query) return;
+        executeUniversalSearch(query);
+    }
+
+    // ==================== 5. AUTOCOMPLETE ====================
+    async function fetchAutocompleteSuggestions(query) {
+        try {
+            const url = `https://${currentLang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0&format=json&origin=*`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const titles = data[1] || [];
+            const descriptions = data[2] || [];
+
+            if (titles.length === 0) { hideAutocomplete(); return; }
+
+            const list = document.getElementById('autocomplete-list');
+            list.innerHTML = titles.map((title, idx) => {
+                const desc = descriptions[idx] ? `<p class="text-xs text-slate-500 truncate"></p>` : '';
+                return `<button type="button" role="option" data-title="${escapeAttr(title)}" class="w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center justify-between gap-3 transition-colors text-start">
+                    <div class="overflow-hidden">
+                        <p class="font-bold text-sm text-slate-900 dark:text-white truncate"></p>
+                        ${desc}
+                    </div>
+                    <i class="fa-solid fa-arrow-up-left text-xs text-slate-400 shrink-0"></i>
+                </button>`;
+            }).join('');
+
+            list.querySelectorAll('[data-title]').forEach((btn, i) => {
+                btn.querySelector('.font-bold').textContent = titles[i];
+                const descEl = btn.querySelector('.text-xs.text-slate-500');
+                if (descEl) descEl.textContent = descriptions[i] || '';
+            });
+
+            document.getElementById('autocomplete-dropdown').classList.remove('hidden');
+            document.getElementById('search-input').setAttribute('aria-expanded', 'true');
+        } catch (e) {
+            hideAutocomplete();
+        }
+    }
+
+    function hideAutocomplete() {
+        document.getElementById('autocomplete-dropdown').classList.add('hidden');
+        document.getElementById('search-input').setAttribute('aria-expanded', 'false');
+    }
+
+    function escapeAttr(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ==================== 6. API ENGINE ====================
+    function extractDomain(input) {
+        if (!input) return null;
+        let cleaned = input.trim().toLowerCase();
+        if (cleaned.includes(' ') && !cleaned.startsWith('http')) return null;
+        cleaned = cleaned.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].split('?')[0];
+        if (/^[a-z0-9.-]+\.[a-z]{2,}$/.test(cleaned)) return cleaned;
+        return null;
+    }
+
+    async function fetchWikipediaComprehensive(query, lang, signal) {
+        const tryLang = async (targetLang) => {
+            try {
+                const searchUrl = `https://${targetLang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=5`;
+                const searchRes = await fetch(searchUrl, { signal });
+                const searchData = await searchRes.json();
+                const results = searchData?.query?.search || [];
+                if (results.length === 0) return null;
+
+                const topTitle = results[0].title;
+                const relatedTitles = results.slice(1, 5).map(r => r.title);
+
+                const summaryUrl = `https://${targetLang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topTitle)}`;
+                const summaryRes = await fetch(summaryUrl, { signal });
+                if (!summaryRes.ok) return null;
+                const summary = await summaryRes.json();
+
+                return {
+                    title: summary.title,
+                    description: summary.description || '',
+                    extract: summary.extract || '',
+                    thumbnail: summary.originalimage?.source || summary.thumbnail?.source || null,
+                    coordinates: summary.coordinates || null,
+                    url: summary.content_urls?.desktop?.page || `https://${targetLang}.wikipedia.org/wiki/${encodeURIComponent(topTitle)}`,
+                    lang: targetLang,
+                    related: relatedTitles
+                };
+            } catch (e) { 
+                if (e.name === 'AbortError') throw e;
+                return null; 
+            }
+        };
+
+        let wiki = await tryLang(lang);
+        if (!wiki && lang !== 'en') wiki = await tryLang('en');
+        return wiki;
+    }
+
+    async function fetchGoogleDNS(domain, signal) {
+        if (!domain) return [];
+        const types = ['A', 'MX', 'TXT'];
+        const results = await Promise.all(types.map(async (type) => {
+            try {
+                const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=${type}`, { signal });
+                const data = await res.json();
+                if (data.Answer) {
+                    return data.Answer.slice(0, 2).map(ans => ({ type, data: String(ans.data).replace(/^"|"$/g, ''), ttl: ans.TTL }));
+                }
+            } catch (e) { 
+                if (e.name === 'AbortError') throw e;
+            }
+            return [];
+        }));
+        return results.flat();
+    }
+
+    async function fetchNominatimLocation(placeQuery, signal) {
+        if (!placeQuery || placeQuery.length < 2) return null;
+        try {
+            // Nominatim requires an email address for identification in query params
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeQuery)}&limit=1&email=contact@universal-radar.app`;
+            const res = await fetch(url, { headers: { 'Accept-Language': currentLang }, signal });
+            const data = await res.json();
+            if (data && data.length > 0) {
+                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), displayName: data[0].display_name };
+            }
+        } catch (e) { 
+            if (e.name === 'AbortError') throw e;
+        }
+        return null;
+    }
+
+    async function fetchGeminiUniversalIntelligence(query, wikiData, targetLang, categoryHint, signal) {
+        if (!geminiApiKey) return null;
+
+        const langNames = { ar: 'Arabic (العربية)', en: 'English', fr: 'French (Français)' };
+        const targetLanguageName = langNames[targetLang] || 'Arabic';
+
+        const systemPrompt = `You are a Universal Encyclopedia & Precision Entity Analyst.
+Classify the entity into one of: "person", "object", "company", or "place".
+ALL output text MUST be written in fluent, natural ${targetLanguageName}.
+Adapt the 4 metric cards to the entity type:
+- person: Born, Nationality/Origin, Profession/Field, Era/Status
+- object: Category/Type, Origin/Inventor, Key Property, Primary Use
+- company: Founded, Headquarters, Founder/CEO, Industry
+- place: Country/Region, Area/Population, Famous Era, Significance
+Only include "officialDomain" for companies/websites. Only include "locationQuery" if there's a meaningful geographic location.`;
+
+        const userPrompt = `Query: "${query}"
+Category Hint: "${categoryHint}"
+${wikiData ? `Wikipedia Reference (${wikiData.title}): "${wikiData.extract}"` : 'No direct Wikipedia match; use your knowledge.'}
+Return a structured JSON profile.`;
+
+        const payload = {
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        entityType: { type: "STRING", enum: ["person","object","company","place"] },
+                        officialName: { type: "STRING" },
+                        subCategory: { type: "STRING" },
+                        tagline: { type: "STRING" },
+                        quickMeta: { type: "STRING" },
+                        metric1Label: { type: "STRING" }, metric1Value: { type: "STRING" },
+                        metric2Label: { type: "STRING" }, metric2Value: { type: "STRING" },
+                        metric3Label: { type: "STRING" }, metric3Value: { type: "STRING" },
+                        metric4Label: { type: "STRING" }, metric4Value: { type: "STRING" },
+                        detailedSummary: { type: "STRING" },
+                        tagsList: { type: "ARRAY", items: { type: "STRING" } },
+                        keyFacts: { type: "ARRAY", items: { type: "STRING" } },
+                        officialDomain: { type: "STRING" },
+                        locationQuery: { type: "STRING" }
+                    },
+                    required: ["entityType","officialName","subCategory","tagline","quickMeta","metric1Label","metric1Value","metric2Label","metric2Value","metric3Label","metric3Value","metric4Label","metric4Value","detailedSummary","tagsList","keyFacts"]
+                }
+            }
+        };
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiApiKey}`;
+
+        let delay = 900;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                let rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                rawText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+                if (rawText) return JSON.parse(rawText);
+            } catch (err) {
+                if (err.name === 'AbortError') throw err;
+                if (attempt === 2) return null;
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+        }
+        return null;
+    }
+
+    function buildWikipediaFallbackProfile(query, wiki, lang) {
+        const isDomain = Boolean(extractDomain(query));
+        const type = isDomain ? 'company' : 'object';
+        const labels = {
+            ar: { m1:"المصدر", m2:"التصنيف", m3:"اللغة", m4:"الحالة", sub:"معلومة موسوعية", fact:"تم استخراج البيانات مباشرة من موسوعة ويكيبيديا.", verified:"موثق من ويكيبيديا", active:"نشط" },
+            en: { m1:"Source", m2:"Classification", m3:"Language", m4:"Status", sub:"Encyclopedia Entry", fact:"Extracted directly from Wikipedia REST API.", verified:"Wikipedia Verified", active:"Active" },
+            fr: { m1:"Source", m2:"Classification", m3:"Langue", m4:"Statut", sub:"Entrée encyclopédique", fact:"Données extraites directement de Wikipédia.", verified:"Vérifié par Wikipédia", active:"Actif" }
+        }[lang];
+
+        return {
+            entityType: type,
+            officialName: wiki.title,
+            subCategory: wiki.description || labels.sub,
+            tagline: wiki.description || wiki.title,
+            quickMeta: labels.verified,
+            metric1Label: labels.m1, metric1Value: "Wikipedia",
+            metric2Label: labels.m2, metric2Value: wiki.description ? wiki.description.slice(0, 28) : labels.sub,
+            metric3Label: labels.m3, metric3Value: wiki.lang.toUpperCase(),
+            metric4Label: labels.m4, metric4Value: labels.active,
+            detailedSummary: wiki.extract,
+            tagsList: wiki.related || [wiki.title],
+            keyFacts: [labels.fact],
+            officialDomain: extractDomain(query) || "",
+            locationQuery: ""
+        };
+    }
+
+    // ==================== 7. SEARCH ORCHESTRATOR ====================
+    async function executeUniversalSearch(query, isLanguageSwitch = false) {
+        // Clear any existing timeouts and aborts
+        if (requestTimeoutId) clearTimeout(requestTimeoutId);
+        if (searchAbortController) searchAbortController.abort();
+        
+        searchAbortController = new AbortController();
+        const signal = searchAbortController.signal;
+
+        const cacheKey = `${currentLang}_${query}_${selectedCategory}`;
+        if (!isLanguageSwitch && searchCache.has(cacheKey)) {
+            currentResult = searchCache.get(cacheKey);
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('loading-state').classList.add('hidden');
+            renderBentoDashboard(currentResult);
+            document.getElementById('results-dashboard').classList.remove('hidden');
+            updateChatContextLabel();
+            return;
+        }
+
+        stopSpeech();
+        const emptyState = document.getElementById('empty-state');
+        const resultsDash = document.getElementById('results-dashboard');
+        const loadingState = document.getElementById('loading-state');
+        const loadingStepText = document.getElementById('loading-step');
+
+        emptyState.classList.add('hidden');
+        resultsDash.classList.add('hidden');
+        loadingState.classList.remove('hidden');
+        
+        // Set initial loading step
+        loadingStepText.textContent = translations[currentLang].loadingStep1;
+
+        // Set 15-second timeout
+        requestTimeoutId = setTimeout(() => {
+            if (searchAbortController) searchAbortController.abort();
+            showToast(translations[currentLang].toastTimeout, 'error');
+            loadingState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+        }, 15000);
+
+        try {
+            const wikiData = await fetchWikipediaComprehensive(query, currentLang, signal);
+            
+            // Step 2
+            loadingStepText.textContent = translations[currentLang].loadingStep2;
+            
+            let aiData = await fetchGeminiUniversalIntelligence(query, wikiData, currentLang, selectedCategory, signal);
+            if (!aiData && wikiData) aiData = buildWikipediaFallbackProfile(query, wikiData, currentLang);
+
+            if (!aiData && !wikiData) {
+                clearTimeout(requestTimeoutId);
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                showToast(translations[currentLang].toastNotFound, 'error');
+                return;
+            }
+
+            // Step 3
+            loadingStepText.textContent = translations[currentLang].loadingStep3;
+
+            const cleanDomain = extractDomain(query) || extractDomain(aiData?.officialDomain || '');
+            const dnsRecords = cleanDomain ? await fetchGoogleDNS(cleanDomain, signal) : [];
+
+            let mapCoords = null;
+            if (wikiData?.coordinates) {
+                mapCoords = { lat: wikiData.coordinates.lat, lon: wikiData.coordinates.lon, label: aiData.locationQuery || wikiData.title };
+            } else if (aiData?.locationQuery && aiData.locationQuery.trim() !== '') {
+                const osm = await fetchNominatimLocation(aiData.locationQuery, signal);
+                if (osm) mapCoords = { lat: osm.lat, lon: osm.lon, label: aiData.locationQuery };
+            }
+
+            currentResult = {
+                originalQuery: query,
+                timestamp: new Date().toISOString(),
+                language: currentLang,
+                ai: aiData,
+                wiki: wikiData,
+                domain: cleanDomain,
+                dns: dnsRecords,
+                coords: mapCoords
+            };
+
+            if (searchCache.size > 50) searchCache.clear();
+            searchCache.set(cacheKey, currentResult);
+
+            renderBentoDashboard(currentResult);
+            if (!isLanguageSwitch) addToHistory(query, aiData.officialName, aiData.entityType);
+
+            clearTimeout(requestTimeoutId);
+            loadingState.classList.add('hidden');
+            resultsDash.classList.remove('hidden');
+            updateChatContextLabel();
+            
+        } catch (err) {
+            clearTimeout(requestTimeoutId);
+            if (err.name === 'AbortError') return; // Ignore aborted errors
+            loadingState.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            showToast(translations[currentLang].toastNotFound, 'error');
+        }
+    }
+
+    // ==================== 8. RENDER DASHBOARD ====================
+    function renderBentoDashboard(data) {
+        const { ai, wiki, domain, dns, coords } = data;
+        const dict = translations[currentLang];
+        const type = ai.entityType || 'object';
+
+        const typeStyles = {
+            person: { icon:'fa-user-tie', badgeClass:'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/25', fallbackIcon:'fa-user-tie' },
+            object: { icon:'fa-cube', badgeClass:'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25', fallbackIcon:'fa-atom' },
+            company: { icon:'fa-building', badgeClass:'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25', fallbackIcon:'fa-building' },
+            place: { icon:'fa-location-dot', badgeClass:'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/25', fallbackIcon:'fa-earth-americas' }
+        };
+        const style = typeStyles[type] || typeStyles.object;
+
+        const badgeEl = document.getElementById('res-type-badge');
+        badgeEl.className = `inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${style.badgeClass}`;
+        document.getElementById('res-type-icon').className = `fa-solid ${style.icon}`;
+        document.getElementById('res-type-label').textContent = dict.typeLabels[type] || type;
+        document.getElementById('res-subbadge').textContent = ai.subCategory || '';
+
+        const imgEl = document.getElementById('res-image');
+        const fallbackEl = document.getElementById('res-image-fallback');
+        imgEl.classList.add('hidden');
+        imgEl.removeAttribute('src');
+        delete imgEl.dataset.retried;
+        fallbackEl.className = `fa-solid ${style.fallbackIcon} text-3xl text-brand-500`;
+        fallbackEl.classList.remove('hidden');
+
+        if (wiki?.thumbnail) {
+            imgEl.onload = () => { imgEl.classList.remove('hidden'); fallbackEl.classList.add('hidden'); };
+            imgEl.onerror = () => { imgEl.classList.add('hidden'); fallbackEl.classList.remove('hidden'); };
+            imgEl.src = wiki.thumbnail;
+        } else if (domain) {
+            imgEl.onload = () => { imgEl.classList.remove('hidden'); fallbackEl.classList.add('hidden'); };
+            imgEl.onerror = () => {
+                if (imgEl.dataset.retried === 'true') {
+                    imgEl.classList.add('hidden');
+                    fallbackEl.classList.remove('hidden');
+                    return;
+                }
+                imgEl.dataset.retried = 'true';
+                imgEl.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+            };
+            imgEl.src = `https://logo.clearbit.com/${domain}`;
+        }
+
+        document.getElementById('res-name').textContent = ai.officialName;
+        document.getElementById('res-tagline').textContent = ai.tagline;
+        document.getElementById('res-meta-1').textContent = ai.quickMeta || ai.subCategory;
+
+        const webLink = document.getElementById('res-website-link');
+        if (domain) {
+            webLink.href = `https://${domain}`;
+            document.getElementById('res-domain').textContent = domain;
+            webLink.classList.remove('hidden');
+        } else {
+            webLink.classList.add('hidden');
+        }
+
+        const metricIcons = {
+            person: ['fa-cake-candles', 'fa-flag', 'fa-briefcase', 'fa-hourglass-half'],
+            object: ['fa-tag', 'fa-lightbulb', 'fa-list-check', 'fa-wrench'],
+            company: ['fa-calendar-days', 'fa-building', 'fa-user-tie', 'fa-industry'],
+            place: ['fa-map', 'fa-users', 'fa-landmark', 'fa-star']
+        };
+        const icons = metricIcons[type] || metricIcons.object;
+        
+        const metrics = [
+            { label: ai.metric1Label, val: ai.metric1Value, icon: icons[0], color: 'text-sky-500 bg-sky-500/10' },
+            { label: ai.metric2Label, val: ai.metric2Value, icon: icons[1], color: 'text-amber-500 bg-amber-500/10' },
+            { label: ai.metric3Label, val: ai.metric3Value, icon: icons[2], color: 'text-emerald-500 bg-emerald-500/10' },
+            { label: ai.metric4Label, val: ai.metric4Value, icon: icons[3], color: 'text-purple-500 bg-purple-500/10' }
+        ];
+
+        document.getElementById('adaptive-metrics-grid').innerHTML = metrics.map(m => `
+            <div class="bento-card bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400"></span>
+                    <div class="w-8 h-8 rounded-lg ${m.color} flex items-center justify-center"><i class="fa-solid ${m.icon} text-xs"></i></div>
+                </div>
+                <p class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug"></p>
+            </div>
+        `).join('');
+        document.querySelectorAll('#adaptive-metrics-grid > div').forEach((el, i) => {
+            el.querySelector('span').textContent = metrics[i].label || '--';
+            el.querySelector('p').textContent = metrics[i].val || '--';
+        });
+
+        document.getElementById('res-description').textContent = ai.detailedSummary;
+        document.getElementById('res-tags-heading').textContent = dict.tagsHeadings[type] || dict.tagsHeadings.object;
+
+        const tagsContainer = document.getElementById('res-tags-container');
+        tagsContainer.innerHTML = '';
+        (ai.tagsList || []).forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'px-3 py-1.5 rounded-xl bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-500/20 text-xs font-bold hover:bg-brand-500/20 transition-colors cursor-default';
+            span.textContent = tag;
+            tagsContainer.appendChild(span);
+        });
+
+        const factsEl = document.getElementById('res-facts');
+        factsEl.innerHTML = '';
+        (ai.keyFacts || []).forEach(fact => {
+            const li = document.createElement('li');
+            li.className = 'flex items-start gap-2.5';
+            li.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500 mt-1 shrink-0"></i><span></span>';
+            li.querySelector('span').textContent = fact;
+            factsEl.appendChild(li);
+        });
+
+        const wikiCard = document.getElementById('wiki-card');
+        if (wiki && wiki.extract) {
+            wikiCard.classList.remove('hidden');
+            document.getElementById('wiki-page-title').textContent = `${wiki.title} (${wiki.lang.toUpperCase()})`;
+            document.getElementById('wiki-extract').textContent = wiki.extract;
+            document.getElementById('wiki-external-link').href = wiki.url;
+        } else {
+            wikiCard.classList.add('hidden');
+        }
+
+        renderScreenshot(domain);
+
+        const dnsCard = document.getElementById('dns-card');
+        if (domain && dns.length > 0) {
+            dnsCard.classList.remove('hidden');
+            document.getElementById('dns-domain-badge').textContent = domain;
+            document.getElementById('dns-records-container').innerHTML = dns.map(rec => `
+                <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-xs hover:border-purple-500/30 transition-colors">
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <span class="px-2 py-0.5 rounded-md font-mono font-extrabold bg-purple-500/15 text-purple-600 dark:text-purple-400 shrink-0"></span>
+                        <span class="font-mono text-slate-700 dark:text-slate-300 truncate"></span>
+                    </div>
+                    <span class="text-[11px] font-mono text-slate-400 shrink-0"></span>
+                </div>
+            `).join('');
+            dnsCard.querySelectorAll('#dns-records-container > div').forEach((el, i) => {
+                el.querySelector('.bg-purple-500\\/15').textContent = dns[i].type;
+                el.querySelector('.font-mono.text-slate-700').textContent = dns[i].data;
+                el.querySelector('.text-\\[11px\\]').textContent = `TTL: ${dns[i].ttl}s`;
+            });
+        } else {
+            dnsCard.classList.add('hidden');
+        }
+
+        const mapCard = document.getElementById('map-card');
+        if (coords && typeof coords.lat === 'number' && typeof coords.lon === 'number') {
+            mapCard.classList.remove('hidden');
+            const delta = 0.04;
+            const bbox = `${coords.lon - delta}%2C${coords.lat - delta}%2C${coords.lon + delta}%2C${coords.lat + delta}`;
+            document.getElementById('osm-iframe').src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat}%2C${coords.lon}`;
+            document.getElementById('gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lon}`;
+            document.getElementById('res-location-desc').textContent = coords.label;
+            document.getElementById('res-coords').textContent = `${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)}`;
+        } else {
+            mapCard.classList.add('hidden');
+        }
+
+        const relatedCard = document.getElementById('related-card');
+        if (wiki?.related && wiki.related.length > 0) {
+            relatedCard.classList.remove('hidden');
+            const list = document.getElementById('related-topics-list');
+            list.innerHTML = '';
+            wiki.related.forEach(topic => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-brand-500/10 hover:text-brand-500 text-xs font-bold transition-all text-start';
+                btn.setAttribute('data-title', topic);
+                btn.innerHTML = '<span class="truncate"></span><i class="fa-solid fa-magnifying-glass text-[10px] text-slate-400 ms-2 shrink-0"></i>';
+                btn.querySelector('span').textContent = topic;
+                list.appendChild(btn);
+            });
+        } else {
+            relatedCard.classList.add('hidden');
+        }
+
+        const links = [];
+        if (domain) links.push({ label: dict.visitOfficialLink, url: `https://${domain}`, icon: 'fa-globe' });
+        if (wiki?.url) links.push({ label: dict.searchWikiLink, url: wiki.url, icon: 'fa-brands fa-wikipedia-w' });
+        links.push({ label: dict.searchGoogleLink, url: `https://www.google.com/search?q=${encodeURIComponent(ai.officialName)}`, icon: 'fa-brands fa-google' });
+
+        const linksContainer = document.getElementById('external-links-container');
+        linksContainer.innerHTML = '';
+        links.forEach(l => {
+            const a = document.createElement('a');
+            a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+            a.className = 'flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/70 hover:bg-brand-500/10 hover:text-brand-500 transition-all active:scale-95';
+            a.innerHTML = `<span class="flex items-center gap-2.5"><i class="fa-solid ${l.icon}"></i><span></span></span><i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400"></i>`;
+            a.querySelector('span > span').textContent = l.label;
+            linksContainer.appendChild(a);
+        });
+
+        updateBookmarkButtonState();
+    }
+
+    // ==================== 9. SCREENSHOT ====================
+    function renderScreenshot(domain) {
+        const card = document.getElementById('screenshot-card');
+        if (!domain) { card.classList.add('hidden'); return; }
+        card.classList.remove('hidden');
+        document.getElementById('screenshot-modal-domain').textContent = domain;
+        document.getElementById('screenshot-modal-open').href = `https://${domain}`;
+        loadScreenshot(domain);
+    }
+
+    function loadScreenshot(domain) {
+        const img = document.getElementById('screenshot-img');
+        const loader = document.getElementById('screenshot-loading');
+        const errEl = document.getElementById('screenshot-error');
+        loader.classList.remove('hidden');
+        errEl.classList.add('hidden');
+        img.classList.add('opacity-0');
+        delete img.dataset.retried;
+
+        const ts = Date.now();
+        const shotUrl = `https://image.thum.io/get/width/900/crop/600/noanimate/https://${domain}?t=${ts}`;
+        img.onload = () => {
+            loader.classList.add('hidden');
+            img.classList.remove('opacity-0');
+            img.dataset.full = shotUrl;
+        };
+        img.onerror = () => {
+            if (img.dataset.retried === 'true') {
+                loader.classList.add('hidden');
+                errEl.classList.remove('hidden');
+                errEl.textContent = translations[currentLang].toastScreenshotFailed;
+                return;
+            }
+            img.dataset.retried = 'true';
+            img.src = `https://api.microlink.io/?url=https://${domain}&screenshot=true&meta=false&embed=screenshot.url`;
+            img.onload = () => { loader.classList.add('hidden'); img.classList.remove('opacity-0'); img.dataset.full = img.src; };
+            img.onerror = () => {
+                loader.classList.add('hidden');
+                errEl.classList.remove('hidden');
+                errEl.textContent = translations[currentLang].toastScreenshotFailed;
+            };
+        };
+        img.src = shotUrl;
+    }
+
+    function reloadScreenshot() {
+        if (currentResult?.domain) loadScreenshot(currentResult.domain);
+    }
+
+    function openScreenshotFull() {
+        const img = document.getElementById('screenshot-img');
+        if (!img || !img.dataset.full) return;
+        document.getElementById('screenshot-modal-img').src = img.dataset.full;
+        document.getElementById('screenshot-modal').classList.remove('hidden');
+    }
+
+    function closeScreenshotFull() {
+        document.getElementById('screenshot-modal').classList.add('hidden');
+    }
+
+    // ==================== 10. TTS ====================
+    function toggleSpeech() {
+        if (!('speechSynthesis' in window)) { 
+            showToast(translations[currentLang].toastTtsUnsupported, 'error'); 
+            return; 
+        }
+        if (!currentResult) { 
+            showToast(translations[currentLang].toastTtsNoText, 'error'); 
+            return; 
+        }
+
+        if (isSpeaking) { 
+            stopSpeech(); 
+            return; 
+        }
+
+        const textToRead = `${currentResult.ai?.officialName || ''}. ${currentResult.ai?.detailedSummary || ''}`.trim();
+        if (!textToRead) { 
+            showToast(translations[currentLang].toastTtsNoText, 'error'); 
+            return; 
+        }
+
+        if (ttsTimeout) clearTimeout(ttsTimeout);
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+
+        const langCode = currentLang === 'ar' ? 'ar-SA' : (currentLang === 'fr' ? 'fr-FR' : 'en-US');
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = langCode;
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+
+        const applyVoiceAndSpeak = () => {
+            const voices = window.speechSynthesis.getVoices() || [];
+            let matched = voices.find(v => v.lang === langCode) || 
+                          voices.find(v => v.lang && v.lang.replace('_', '-').startsWith(langCode.split('-')[0])) ||
+                          voices.find(v => v.default);
+            if (matched) utterance.voice = matched;
+
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.warn('TTS speak failed', e);
+                stopSpeech();
+            }
+        };
+
+        // Chrome bug fix: getVoices() returns empty array on first call.
+        const initialVoices = window.speechSynthesis.getVoices() || [];
+        if (initialVoices.length === 0) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.onvoiceschanged = null;
+                applyVoiceAndSpeak();
+            };
+            // Fallback in case onvoiceschanged never fires (rare)
+            ttsTimeout = setTimeout(applyVoiceAndSpeak, 300);
+        } else {
+            ttsTimeout = setTimeout(applyVoiceAndSpeak, 50); // tiny delay to ensure cancel processed
+        }
+
+        utterance.onend = () => stopSpeech();
+        utterance.onerror = (e) => { 
+            console.warn('TTS error', e); 
+            stopSpeech(); 
+        };
+
+        isSpeaking = true;
+        const icon = document.getElementById('speak-icon');
+        const label = document.querySelector('#speak-btn span');
+        if (icon) icon.className = 'fa-solid fa-stop text-rose-500';
+        if (label) label.textContent = translations[currentLang].stopBtn;
+    }
+
+    function stopSpeech() {
+        if (ttsTimeout) {
+            clearTimeout(ttsTimeout);
+            ttsTimeout = null;
+        }
+        try {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        } catch (e) {}
+        isSpeaking = false;
+        const icon = document.getElementById('speak-icon');
+        const label = document.querySelector('#speak-btn span');
+        if (icon) icon.className = 'fa-solid fa-volume-high';
+        if (label) label.textContent = translations[currentLang].listenBtn;
+    }
+
+    // ==================== 11. BOOKMARKS / HISTORY ====================
+    function toggleDrawer() {
+        const drawer = document.getElementById('bookmarks-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        const hiddenClass = currentLang === 'ar' ? '-translate-x-full' : 'translate-x-full';
+        if (drawer.classList.contains(hiddenClass)) {
+            drawer.classList.remove(hiddenClass);
+            backdrop.classList.remove('hidden');
+            drawer.focus();
+        } else {
+            drawer.classList.add(hiddenClass);
+            backdrop.classList.add('hidden');
+        }
+    }
+
+    function updateBookmarkButtonState() {
+        if (!currentResult) return;
+        const btn = document.getElementById('bookmark-btn');
+        const isSaved = savedBookmarks.some(b => b.name === currentResult.ai.officialName);
+        const dict = translations[currentLang];
+        if (isSaved) {
+            btn.innerHTML = `<i class="fa-solid fa-bookmark text-amber-500"></i><span data-i18n="savedBtn">${dict.savedBtn}</span>`;
+            btn.classList.add('border-amber-500/40', 'bg-amber-500/10');
+        } else {
+            btn.innerHTML = `<i class="fa-regular fa-bookmark"></i><span data-i18n="saveBtn">${dict.saveBtn}</span>`;
+            btn.classList.remove('border-amber-500/40', 'bg-amber-500/10');
+        }
+    }
+
+    function toggleBookmarkCurrent() {
+        if (!currentResult) return;
+        const name = currentResult.ai.officialName;
+        const idx = savedBookmarks.findIndex(b => b.name === name);
+        if (idx > -1) {
+            savedBookmarks.splice(idx, 1);
+            showToast(translations[currentLang].toastRemoved);
+        } else {
+            savedBookmarks.unshift({ name, query: currentResult.originalQuery, sub: currentResult.ai.subCategory });
+            showToast(translations[currentLang].toastSaved);
+        }
+        safeSetItem('universal_bookmarks', JSON.stringify(savedBookmarks));
+        updateBookmarkButtonState();
+        renderDrawerLists();
+    }
+
+    function addToHistory(query, officialName, type) {
+        searchHistory = searchHistory.filter(h => h.query.toLowerCase() !== query.toLowerCase());
+        searchHistory.unshift({ query, name: officialName || query, type, time: new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) });
+        if (searchHistory.length > 15) searchHistory.pop();
+        safeSetItem('universal_history', JSON.stringify(searchHistory));
+        renderDrawerLists();
+    }
+
+    function clearHistory() {
+        searchHistory = [];
+        try { localStorage.removeItem('universal_history'); } catch(e) {}
+        renderDrawerLists();
+    }
+
+    function renderDrawerLists() {
+        const dict = translations[currentLang];
+        const badge = document.getElementById('saved-count-badge');
+        if (savedBookmarks.length > 0) {
+            badge.textContent = savedBookmarks.length;
+            badge.classList.remove('hidden');
+        } else badge.classList.add('hidden');
+
+        const bList = document.getElementById('bookmarks-list');
+        bList.innerHTML = '';
+        if (savedBookmarks.length === 0) {
+            bList.innerHTML = `<p class="text-xs text-slate-500 italic"></p>`;
+            bList.querySelector('p').textContent = dict.noSaved;
+        } else {
+            savedBookmarks.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-start flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:border-brand-500 transition-all cursor-pointer group';
+                btn.setAttribute('data-query', item.query);
+                btn.innerHTML = '<div class="overflow-hidden"><p class="font-bold text-sm truncate group-hover:text-brand-500 transition-colors"></p><p class="text-xs text-slate-500 truncate"></p></div><i class="fa-solid fa-arrow-up-right-from-square text-xs text-brand-500 ms-2 opacity-50 group-hover:opacity-100 transition-opacity"></i>';
+                btn.querySelector('.font-bold').textContent = item.name;
+                btn.querySelector('.text-xs').textContent = item.sub || item.query;
+                bList.appendChild(btn);
+            });
+        }
+
+        const hList = document.getElementById('history-list');
+        hList.innerHTML = '';
+        if (searchHistory.length === 0) {
+            hList.innerHTML = `<p class="text-xs text-slate-500 italic"></p>`;
+            hList.querySelector('p').textContent = dict.noHistory;
+        } else {
+            searchHistory.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-start flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer';
+                btn.setAttribute('data-query', item.query);
+                btn.innerHTML = '<div class="flex items-center gap-2.5 overflow-hidden"><i class="fa-solid fa-clock-rotate-left text-slate-400 text-xs"></i><span class="text-xs font-semibold truncate"></span></div><span class="text-[10px] text-slate-400 font-mono"></span>';
+                btn.querySelector('.truncate').textContent = item.name;
+                btn.querySelector('.font-mono').textContent = item.time;
+                hList.appendChild(btn);
+            });
+        }
+    }
+
+    function copyReport() {
+        if (!currentResult) return;
+        const ai = currentResult.ai;
+        const text = `=== ${ai.officialName} (${ai.subCategory}) ===\n${ai.tagline}\n\n• ${ai.metric1Label}: ${ai.metric1Value}\n• ${ai.metric2Label}: ${ai.metric2Value}\n• ${ai.metric3Label}: ${ai.metric3Value}\n• ${ai.metric4Label}: ${ai.metric4Value}\n\n${ai.detailedSummary}\n\n${(ai.keyFacts || []).map(f => `- ${f}`).join('\n')}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => showToast(translations[currentLang].toastCopied)).catch(() => fallbackCopy(text));
+        } else fallbackCopy(text);
+    }
+    function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); showToast(translations[currentLang].toastCopied); } catch (e) {}
+        document.body.removeChild(ta);
+    }
+
+    function downloadJSON() {
+        if (!currentResult) return;
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentResult, null, 2));
+        const a = document.createElement('a');
+        a.href = dataStr;
+        const filename = (currentResult.ai.officialName || 'knowledge-report').replace(/[^a-z0-9\u0600-\u06FF]/gi, '_').toLowerCase();
+        a.download = `${filename}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    // ==================== 12. SETTINGS ====================
+    function openSettings() {
+        document.getElementById('api-key-input').value = geminiApiKey;
+        document.getElementById('api-key-status').classList.add('hidden');
+        document.getElementById('settings-modal').classList.remove('hidden');
+        setTimeout(() => document.getElementById('api-key-input').focus(), 100);
+    }
+    function closeSettings() {
+        document.getElementById('settings-modal').classList.add('hidden');
+    }
+    function saveSettings() {
+        const key = document.getElementById('api-key-input').value.trim();
+        geminiApiKey = key;
+        safeSetItem('gemini_api_key', key);
+        const status = document.getElementById('api-key-status');
+        status.className = 'text-xs font-bold p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
+        status.textContent = translations[currentLang].toastSettingsSaved;
+        status.classList.remove('hidden');
+        setTimeout(() => { closeSettings(); }, 700);
+    }
+
+    // ==================== 13. CHAT ====================
+    function toggleChat() {
+        const fab = document.getElementById('chat-fab');
+        if (chatOpen) {
+            closeChat();
+            fab.setAttribute('aria-expanded', 'false');
+        } else {
+            openChat();
+            fab.setAttribute('aria-expanded', 'true');
+        }
+    }
+    function openChat() {
+        chatOpen = true;
+        document.getElementById('chat-panel').classList.remove('opacity-0', 'translate-y-6', 'pointer-events-none');
+        document.getElementById('chat-unread').classList.add('hidden');
+        updateChatContextLabel();
+        renderChatMessages();
+        setTimeout(() => document.getElementById('chat-input').focus(), 200);
+    }
+    function closeChat() {
+        chatOpen = false;
+        document.getElementById('chat-panel').classList.add('opacity-0', 'translate-y-6', 'pointer-events-none');
+    }
+
+    function clearChat() {
+        chatMessages = [];
+        safeSetItem('universal_chat', '[]');
+        renderChatMessages();
+        showToast(translations[currentLang].toastChatCleared);
+    }
+
+    function updateChatContextLabel() {
+        const label = document.getElementById('chat-context-label');
+        const dict = translations[currentLang];
+        if (currentResult?.ai?.officialName) {
+            label.textContent = dict.chatAboutCurrent.replace('{name}', currentResult.ai.officialName);
+        } else {
+            label.textContent = dict.chatSubtitle;
+        }
+    }
+
+    function renderChatMessages() {
+        const container = document.getElementById('chat-messages');
+        if (!chatMessages.length) {
+            container.innerHTML = `
+                <div class="chat-bubble flex items-start gap-2.5 welcome-msg">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm"><i class="fa-solid fa-robot text-xs"></i></div>
+                    <div class="flex-1 px-3.5 py-2.5 rounded-2xl rounded-ss-sm bg-slate-100 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-200 leading-relaxed shadow-sm"></div>
+                </div>
+            `;
+            container.querySelector('.flex-1').textContent = translations[currentLang].chatWelcome + (geminiApiKey ? '' : ' ' + translations[currentLang].chatNoKey);
+            return;
+        }
+        
+        const welcome = container.querySelector('.welcome-msg');
+        if (welcome) container.removeChild(welcome);
+        
+        const currentCount = container.querySelectorAll('.chat-bubble').length;
+        if (currentCount === 0 || chatMessages.length < currentCount) {
+            container.innerHTML = '';
+            chatMessages.forEach(msg => appendChatBubble(msg));
+        } else if (chatMessages.length > currentCount) {
+            for (let i = currentCount; i < chatMessages.length; i++) {
+                appendChatBubble(chatMessages[i]);
+            }
+        }
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function appendChatBubble(msg) {
+        const container = document.getElementById('chat-messages');
+        const isUser = msg.role === 'user';
+        const wrap = document.createElement('div');
+        wrap.className = `chat-bubble flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : ''}`;
+        const avatar = document.createElement('div');
+        avatar.className = `w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white shadow-sm ${isUser ? 'bg-slate-700 dark:bg-slate-600' : 'bg-gradient-to-tr from-brand-600 to-purple-600'}`;
+        avatar.innerHTML = `<i class="fa-solid ${isUser ? 'fa-user' : 'fa-robot'} text-xs"></i>`;
+        const bubble = document.createElement('div');
+        bubble.className = `flex-1 max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed chat-markdown shadow-sm ${isUser ? 'bg-brand-600 text-white rounded-se-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-ss-sm'}`;
+        bubble.innerHTML = isUser ? escapeHtml(msg.content) : renderMarkdown(msg.content);
+        wrap.appendChild(avatar);
+        wrap.appendChild(bubble);
+        container.appendChild(wrap);
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = String(str || '');
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    function renderMarkdown(text) {
+        let html = escapeHtml(text);
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, text, url) => {
+            const safeUrl = url.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        });
+        
+        html = html.replace(/(^|\s|\(|\))(https?:\/\/[^\s<)]+)/g, (m, p1, url) => {
+            const safeUrl = url.replace(/"/g, '&quot;');
+            return `${p1}<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+        });
+        
+        const lines = html.split('<br>');
+        let inUl = false, out = [];
+        lines.forEach(line => {
+            const m = line.match(/^\s*[-*]\s+(.*)$/);
+            if (m) {
+                if (!inUl) { out.push('<ul>'); inUl = true; }
+                out.push('<li>' + m[1] + '</li>');
+            } else {
+                if (inUl) { out.push('</ul>'); inUl = false; }
+                out.push(line);
+            }
+        });
+        if (inUl) out.push('</ul>');
+        
+        // Preserve meaningful double breaks (paragraphs), only collapse 3+
+        return out.join('<br>').replace(/<ul><br>/g, '<ul>').replace(/<\/(ul|li)><br>/g, '</$1>').replace(/(<br>){3,}/g, '<br><br>');
+    }
+
+    function handleChatSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        sendChatMessage(text);
+    }
+
+    async function sendChatMessage(text) {
+        if (!text || !text.trim()) return;
+        
+        chatMessages.push({ role: 'user', content: text });
+        if (chatMessages.length > 20) chatMessages = chatMessages.slice(-20);
+        safeSetItem('universal_chat', JSON.stringify(chatMessages));
+        renderChatMessages();
+        
+        document.getElementById('chat-send-btn').disabled = true;
+        document.getElementById('chat-loading').classList.remove('hidden');
+
+        let reply = '';
+        try {
+            if (geminiApiKey && geminiApiKey.trim() !== '') {
+                reply = await callGeminiChat();
+            } else {
+                reply = generateFallbackChatResponse(text);
+            }
+        } catch (err) {
+            console.error(err);
+            reply = `⚠️ ${err.message || translations[currentLang].chatError}`;
+        }
+
+        if (!reply || !reply.trim()) reply = translations[currentLang].chatError;
+        
+        chatMessages.push({ role: 'assistant', content: reply });
+        if (chatMessages.length > 20) chatMessages = chatMessages.slice(-20);
+        safeSetItem('universal_chat', JSON.stringify(chatMessages));
+        
+        document.getElementById('chat-send-btn').disabled = false;
+        document.getElementById('chat-loading').classList.add('hidden');
+        renderChatMessages();
+    }
+
+    async function callGeminiChat() {
+        const langNames = { ar: 'Arabic (العربية)', en: 'English', fr: 'French (Français)' };
+        const langName = langNames[currentLang] || 'Arabic';
+
+        let systemPrompt;
+        if (currentResult?.ai) {
+            const ai = currentResult.ai;
+            systemPrompt = `You are an expert encyclopedia assistant. The user is currently viewing this entity:
+- Name: ${ai.officialName}
+- Type: ${ai.entityType}
+- Category: ${ai.subCategory}
+- Tagline: ${ai.tagline}
+- Summary: ${ai.detailedSummary}
+- Key facts: ${(ai.keyFacts || []).join('; ')}
+${currentResult.wiki?.extract ? `- Wikipedia: ${currentResult.wiki.extract}` : ''}
+
+Answer the user's questions accurately and helpfully, based on this context and general knowledge. Reply in ${langName}. Be concise but informative. If the question is unrelated to the entity, still answer it helpfully. Use markdown for structure when helpful.`;
+        } else {
+            systemPrompt = `You are a helpful universal knowledge assistant. Answer questions accurately in ${langName}. Use markdown for structure when helpful.`;
+        }
+
+        const contents = chatMessages.slice(-10).map(m => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: String(m.content || '') }]
+        }));
+
+        const payload = {
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: contents,
+            generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+        };
+
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiApiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const errorMsg = errorData?.error?.message || `HTTP Error ${res.status}`;
+                return `⚠️ API Error: ${errorMsg}`;
+            }
+            
+            const data = await res.json();
+            return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        } catch (e) {
+            return `⚠️ Network Error: ${e.message}`;
+        }
+    }
+
+    function generateFallbackChatResponse(query) {
+        const dict = translations[currentLang];
+        if (!currentResult?.ai) {
+            return dict.chatNoResult + '\n\n' + dict.chatNoKey;
+        }
+        const ai = currentResult.ai;
+        const q = String(query || '').toLowerCase();
+        const matches = [];
+        
+        const nameStr = String(ai.officialName || '').toLowerCase();
+        const typeStr = String(ai.entityType || '').toLowerCase();
+        
+        if ((nameStr && q.includes(nameStr)) || q.includes(typeStr)) {
+            matches.push(`${ai.officialName || 'Unknown'} — ${ai.tagline || ''}\n\n${ai.detailedSummary || ''}`);
+        }
+        
+        if (q.includes('fact') || q.includes('facts') || q.includes('حقيقة') || q.includes('حقائق') || q.includes('fait')) {
+            matches.push((ai.keyFacts || []).map(f => `• ${f}`).join('\n'));
+        }
+        
+        if (q.includes('born') || q.includes('birth') || q.includes('ولد') || q.includes('naissance') || q.includes('ميلاد')) {
+            matches.push(`${ai.metric1Label || 'Info'}: ${ai.metric1Value || ''}`);
+        }
+        
+        if (q.includes('who') || q.includes('ما هو') || q.includes('من هو') || q.includes('quoi') || q.includes('qui')) {
+            matches.push(`${ai.officialName || 'Unknown'} — ${ai.subCategory || ''}\n${ai.detailedSummary || ''}`);
+        }
+
+        if (matches.length === 0) {
+            matches.push(`${ai.officialName || 'Unknown'}\n${ai.tagline || ''}\n\n${(ai.keyFacts || []).slice(0, 3).map(f => `• ${f}`).join('\n')}`);
+        }
+
+        return matches.join('\n\n') + '\n\n' + dict.chatNoKey;
+    }
+</script>
+</body>
+</html>
